@@ -21,6 +21,7 @@ jobs:
       - name: Render real account data
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PROFILE_STATS_TOKEN: ${{ secrets.PROFILE_STATS_TOKEN }}
         run: python3 scripts/update_stats.py
       - name: Save updated graphics
         run: |

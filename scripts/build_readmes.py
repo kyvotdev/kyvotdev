@@ -52,9 +52,7 @@ I can assess a website's security by examining APIs, sessions, access controls a
 
 **Online privacy and anonymity** are another area of interest: reducing digital footprints, protecting personal data, isolating environments and understanding what applications and network services reveal.''')
     oss=('''Ценю **open source**: открытый код, прозрачные решения и обмен знаниями. Создаю инструменты, которые можно изучать, дорабатывать и использовать повторно. Мне интересно разбирать чужие реализации и делиться своими находками.''' if ru else '''I value **open source**: accessible code, transparent solutions and shared knowledge. I build tools that can be studied, extended and reused. I enjoy exploring other implementations and sharing what I learn.''')
-    note=('Статистика обновляется автоматически. Диаграмма языков показывает объём кода в публичных собственных репозиториях без форков, а не уровень владения технологиями.' if ru else 'Statistics update automatically. Language distribution reflects code size in public, owned, non-fork repositories, rather than proficiency.')
-    body=f'''<!-- Replace kyvotdev and yupirut@protonmail.com. Setup: see SETUP.md. -->
-<div align="center">
+    body=f'''<div align="center">
 
 {nav}
 
@@ -132,8 +130,6 @@ I can assess a website's security by examining APIs, sessions, access controls a
 <br />
 
 <img src="./assets/languages.svg" width="100%" alt="Public repository language distribution" />
-
-<sub>{note}</sub>
 
 <br />
 <br />

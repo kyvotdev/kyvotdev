@@ -1,4 +1,3 @@
-<!-- Replace kyvotdev and yupirut@protonmail.com. Setup: see SETUP.md. -->
 <div align="center">
 
 **Русский** &nbsp; / &nbsp; [English](./README.en.md)
@@ -131,8 +130,6 @@
 <br />
 
 <img src="./assets/languages.svg" width="100%" alt="Public repository language distribution" />
-
-<sub>Статистика обновляется автоматически. Диаграмма языков показывает объём кода в публичных собственных репозиториях без форков, а не уровень владения технологиями.</sub>
 
 <br />
 <br />

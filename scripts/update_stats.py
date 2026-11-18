@@ -1,4 +1,3 @@
-"""Generate monochrome profile statistics from GitHub. Python standard library only."""
 import datetime as dt
 import html
 import json
@@ -24,8 +23,27 @@ def write(name, height, body, label):
     (ASSETS / name).write_text(svg(height, body, label), encoding='utf-8')
 
 def placeholder():
-    for name, title in [('stats.svg', 'GITHUB / LIVE STATISTICS'), ('activity.svg', 'CONTRIBUTIONS / ACTIVITY MAP'), ('languages.svg', 'PUBLIC CODE / LANGUAGE DISTRIBUTION')]:
-        write(name, 170, f'<text x="32" y="48" fill="#fff" font-size="18">{title}</text><text x="32" y="92" class="label">Waiting for the first GitHub Actions run.</text><text x="32" y="122" class="label">Real account data will appear here automatically.</text>', title)
+    render_stats(None)
+    for name, title in [('activity.svg', 'CONTRIBUTIONS / ACTIVITY MAP'), ('languages.svg', 'PUBLIC CODE / LANGUAGE DISTRIBUTION')]:
+        write(name, 170, f'<text x="32" y="48" fill="#fff" font-size="18">{title}</text><text x="32" y="108" class="value">—</text>', title)
+
+PRIVATE_QUERY = '''query($login: String!) {
+ user(login: $login) {
+  repositories(first:1, ownerAffiliations:OWNER, privacy:PRIVATE) { totalCount }
+ }
+}'''
+
+def get_private_repo_count(login, token):
+    if not token:
+        return None
+    req = urllib.request.Request('https://api.github.com/graphql',
+        data=json.dumps({'query':PRIVATE_QUERY, 'variables':{'login':login}}).encode(),
+        headers={'Authorization':f'Bearer {token}', 'Content-Type':'application/json', 'User-Agent':'monochrome-profile-stats'})
+    with urllib.request.urlopen(req, timeout=45) as res:
+        payload = json.load(res)
+    if payload.get('errors') or not payload.get('data', {}).get('user'):
+        raise RuntimeError('Unable to retrieve private repository count')
+    return payload['data']['user']['repositories']['totalCount']
 
 QUERY = '''query($login: String!, $after: String) {
  user(login: $login) {
@@ -61,19 +79,24 @@ def get_data(login, token):
             return user, repos
         after = connection['pageInfo']['endCursor']
 
-def render(user, repos):
+def render_stats(user, repos=(), private_count=None):
+    metrics = [('PUBLIC REPOS',len(repos) if user else None),('PRIVATE REPOS',private_count),('STARS / NON-FORK REPOS',sum(r['stargazerCount'] for r in repos if not r['isFork']) if user else None),('COMMITS / LAST YEAR',user['contributionsCollection']['totalCommitContributions'] if user else None),('CONTRIBUTIONS / LAST YEAR',user['contributionsCollection']['contributionCalendar']['totalContributions'] if user else None)]
+    body = '<text x="32" y="38" class="label">GITHUB / LIVE STATISTICS</text>'
+    for i,(label,value) in enumerate(metrics):
+        x = 32+i*228
+        if i:
+            body += f'<path d="M{x-16} 65v88" stroke="#292929"/>'
+        display = f'{value:,}' if value is not None else '—'
+        body += f'<text x="{x}" y="108" class="value">{display}</text><text x="{x}" y="143" class="label" style="font-size:12px">{label}</text>'
+    if user:
+        body += f'<text x="32" y="187" class="label" style="font-size:11px">@{esc(user["login"])} / updated {dt.datetime.now(dt.timezone.utc):%Y-%m-%d %H:%M UTC}</text>'
+    write('stats.svg',210,body,'GitHub profile statistics')
+
+def render(user, repos, private_count=None):
     collection = user['contributionsCollection']
     calendar = collection['contributionCalendar']
     own = [r for r in repos if not r['isFork']]
-    metrics = [('PUBLIC REPOS',len(repos)),('STARS / NON-FORK REPOS',sum(r['stargazerCount'] for r in own)),('COMMITS / LAST YEAR',collection['totalCommitContributions']),('CONTRIBUTIONS / LAST YEAR',calendar['totalContributions'])]
-    body = '<text x="32" y="38" class="label">GITHUB / LIVE STATISTICS</text>'
-    for i,(label,value) in enumerate(metrics):
-        x = 32+i*294
-        if i:
-            body += f'<path d="M{x-16} 65v88" stroke="#292929"/>'
-        body += f'<text x="{x}" y="108" class="value">{value:,}</text><text x="{x}" y="143" class="label" style="font-size:12px">{label}</text>'
-    body += f'<text x="32" y="187" class="label" style="font-size:11px">@{esc(user["login"])} / updated {dt.datetime.now(dt.timezone.utc):%Y-%m-%d %H:%M UTC}</text>'
-    write('stats.svg',210,body,'GitHub profile statistics')
+    render_stats(user, repos, private_count)
     weeks = calendar['weeks']
     high = max((day['contributionCount'] for w in weeks for day in w['contributionDays']), default=0)
     shades = ['#161616','#454545','#777777','#b5b5b5','#ffffff']
@@ -116,11 +139,12 @@ def render(user, repos):
     body += f'<text x="165" y="169" text-anchor="middle" fill="#fff" font-size="30">{len(languages)}</text><text x="165" y="193" text-anchor="middle" class="label" style="font-size:11px">LANGUAGES</text>'
     if not total:
         body += '<text x="330" y="130" class="label">No public language data yet.</text>'
-    body += '<text x="32" y="302" class="label" style="font-size:12px">By code size in public, owned, non-fork repositories. Not a skill rating.</text>'
     write('languages.svg',330,body,'Language distribution by public source code size')
 
 if __name__ == '__main__':
     if os.environ.get('PROFILE_PREVIEW') == '1':
         placeholder()
     else:
-        render(*get_data(os.environ['GITHUB_REPOSITORY_OWNER'],os.environ['GITHUB_TOKEN']))
+        login = os.environ['GITHUB_REPOSITORY_OWNER']
+        private_count = get_private_repo_count(login, os.environ.get('PROFILE_STATS_TOKEN'))
+        render(*get_data(login, os.environ['GITHUB_TOKEN']), private_count)

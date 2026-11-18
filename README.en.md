@@ -1,4 +1,3 @@
-<!-- Replace kyvotdev and yupirut@protonmail.com. Setup: see SETUP.md. -->
 <div align="center">
 
 [Русский](./README.md) &nbsp; / &nbsp; **English**
@@ -131,8 +130,6 @@ I value **open source**: accessible code, transparent solutions and shared knowl
 <br />
 
 <img src="./assets/languages.svg" width="100%" alt="Public repository language distribution" />
-
-<sub>Statistics update automatically. Language distribution reflects code size in public, owned, non-fork repositories, rather than proficiency.</sub>
 
 <br />
 <br />
